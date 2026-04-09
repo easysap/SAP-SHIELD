@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAP Shield — Insider Threat Detection</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #0a0e17;
+    --surface: #111827;
+    --surface-2: #1a2332;
+    --border: #1e2d3d;
+    --text: #e2e8f0;
+    --text-dim: #64748b;
+    --accent: #38bdf8;
+    --accent-glow: rgba(56, 189, 248, 0.15);
+    --critical: #ef4444;
+    --high: #f97316;
+    --medium: #eab308;
+    --low: #22c55e;
+    --success: #10b981;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'DM Sans', system-ui, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--accent), #818cf8);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* Layout */
+  .main { padding: 24px 32px; }
+
+  /* Stats Grid */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: border-color 0.2s;
+  }
+
+  .stat-card:hover { border-color: var(--accent); }
+
+  .stat-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 600;
+  }
+
+  .stat-value.critical { color: var(--critical); }
+  .stat-value.warning { color: var(--high); }
+  .stat-value.accent { color: var(--accent); }
+
+  /* Content Grid */
+  .content-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 20px;
+  }
+
+  /* Panel */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-title {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .panel-body { padding: 0; }
+
+  /* Alerts Table */
+  .alert-table { width: 100%; border-collapse: collapse; }
+
+  .alert-table th {
+    text-align: left;
+    padding: 10px 16px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+
+  .alert-table td {
+    padding: 12px 16px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .alert-table tr:hover { background: var(--surface-2); }
+
+  .severity-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .severity-critical { background: rgba(239,68,68,0.15); color: var(--critical); }
+  .severity-high { background: rgba(249,115,22,0.15); color: var(--high); }
+  .severity-medium { background: rgba(234,179,8,0.15); color: var(--medium); }
+  .severity-low { background: rgba(34,197,94,0.15); color: var(--low); }
+
+  .score-bar {
+    width: 60px;
+    height: 6px;
+    background: var(--surface-2);
+    border-radius: 3px;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+
+  .score-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s;
+  }
+
+  .mono { font-family: var(--mono); font-size: 12px; }
+
+  /* User Risk List */
+  .risk-list { list-style: none; }
+
+  .risk-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+
+  .risk-item:hover { background: var(--surface-2); }
+
+  .risk-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--surface-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    border: 1px solid var(--border);
+  }
+
+  .user-name { font-size: 13px; font-weight: 500; }
+  .user-dept { font-size: 11px; color: var(--text-dim); }
+
+  .risk-score {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+
+  .risk-critical { background: rgba(239,68,68,0.15); color: var(--critical); }
+  .risk-high { background: rgba(249,115,22,0.15); color: var(--high); }
+  .risk-medium { background: rgba(234,179,8,0.15); color: var(--medium); }
+
+  /* Activity Chart Placeholder */
+  .chart-area {
+    padding: 20px;
+    height: 220px;
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .chart-bar {
+    flex: 1;
+    background: var(--accent);
+    border-radius: 3px 3px 0 0;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    min-height: 4px;
+  }
+
+  .chart-bar:hover { opacity: 1; }
+  .chart-bar.threat { background: var(--critical); }
+
+  /* Footer */
+  .footer {
+    padding: 16px 32px;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 12px;
+    border-top: 1px solid var(--border);
+    margin-top: 28px;
+  }
+
+  /* Loading */
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  @media (max-width: 1024px) {
+    .stats-grid { grid-template-columns: repeat(3, 1fr); }
+    .content-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 640px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .header { padding: 12px 16px; }
+    .main { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">🛡️</div>
+    SAP Shield
+  </div>
+  <div class="status-badge">
+    <div class="status-dot"></div>
+    Monitoring Active
+  </div>
+</div>
+
+<div class="main">
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total Events</div>
+      <div class="stat-value accent" id="stat-events">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Open Alerts</div>
+      <div class="stat-value warning" id="stat-open">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Critical Alerts</div>
+      <div class="stat-value critical" id="stat-critical">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Alerts</div>
+      <div class="stat-value" id="stat-alerts">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Monitored Users</div>
+      <div class="stat-value" id="stat-users">—</div>
+    </div>
+  </div>
+
+  <div class="content-grid">
+    <!-- Alerts Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Recent Alerts</div>
+        <div style="font-size:12px;color:var(--text-dim)">Auto-refreshing</div>
+      </div>
+      <div class="panel-body">
+        <table class="alert-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Severity</th>
+              <th>User</th>
+              <th>Rule</th>
+              <th>Score</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="alerts-body">
+            <tr><td colspan="6" class="loading">Loading alerts...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <!-- Top Risk Users -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Highest Risk Users</div>
+        </div>
+        <div class="panel-body">
+          <ul class="risk-list" id="risk-users">
+            <li class="loading">Loading...</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Activity Chart -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Event Activity (24h)</div>
+        </div>
+        <div class="chart-area" id="activity-chart"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  SAP Shield v0.1.0 — Open Source Insider Threat Detection — Apache 2.0 License
+</div>
+
+<script>
+  const API = '/api';
+
+  function formatTime(iso) {
+    const d = new Date(iso);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function severityClass(sev) {
+    return `severity-${sev}`;
+  }
+
+  function riskClass(score) {
+    if (score >= 0.9) return 'risk-critical';
+    if (score >= 0.75) return 'risk-high';
+    return 'risk-medium';
+  }
+
+  function scoreColor(score) {
+    if (score >= 0.9) return 'var(--critical)';
+    if (score >= 0.75) return 'var(--high)';
+    if (score >= 0.5) return 'var(--medium)';
+    return 'var(--low)';
+  }
+
+  async function fetchStats() {
+    try {
+      const res = await fetch(`${API}/stats`);
+      const data = await res.json();
+      document.getElementById('stat-events').textContent = data.total_events.toLocaleString();
+      document.getElementById('stat-open').textContent = data.open_alerts;
+      document.getElementById('stat-critical').textContent = data.critical_alerts;
+      document.getElementById('stat-alerts').textContent = data.total_alerts;
+      document.getElementById('stat-users').textContent = data.unique_users;
+    } catch (e) {
+      console.warn('Stats fetch failed:', e);
+    }
+  }
+
+  async function fetchAlerts() {
+    try {
+      const res = await fetch(`${API}/alerts?limit=15`);
+      const alerts = await res.json();
+      const tbody = document.getElementById('alerts-body');
+
+      if (!alerts.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="loading">No alerts yet — monitoring...</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = alerts.map(a => `
+        <tr>
+          <td class="mono">${formatTime(a.timestamp)}</td>
+          <td><span class="severity-badge ${severityClass(a.severity)}">${a.severity}</span></td>
+          <td class="mono">${a.user}</td>
+          <td>${a.rule_name}</td>
+          <td>
+            <div class="score-bar">
+              <div class="score-fill" style="width:${a.risk_score * 100}%;background:${scoreColor(a.risk_score)}"></div>
+            </div>
+            <span class="mono">${a.risk_score.toFixed(2)}</span>
+          </td>
+          <td><span class="severity-badge severity-${a.status === 'open' ? 'medium' : 'low'}">${a.status}</span></td>
+        </tr>
+      `).join('');
+
+      // Build risk user sidebar from alerts
+      const userScores = {};
+      alerts.forEach(a => {
+        if (!userScores[a.user] || a.risk_score > userScores[a.user].score) {
+          userScores[a.user] = { score: a.risk_score, rule: a.rule_name };
+        }
+      });
+
+      const sorted = Object.entries(userScores)
+        .sort((a, b) => b[1].score - a[1].score)
+        .slice(0, 8);
+
+      const riskList = document.getElementById('risk-users');
+      riskList.innerHTML = sorted.map(([user, info]) => `
+        <li class="risk-item">
+          <div class="risk-user">
+            <div class="user-avatar">${user.slice(0, 2)}</div>
+            <div>
+              <div class="user-name">${user}</div>
+              <div class="user-dept">${info.rule}</div>
+            </div>
+          </div>
+          <div class="risk-score ${riskClass(info.score)}">${info.score.toFixed(2)}</div>
+        </li>
+      `).join('');
+
+    } catch (e) {
+      console.warn('Alerts fetch failed:', e);
+    }
+  }
+
+  function renderChart() {
+    const chart = document.getElementById('activity-chart');
+    const hours = 24;
+    chart.innerHTML = '';
+
+    for (let i = 0; i < hours; i++) {
+      const bar = document.createElement('div');
+      bar.className = 'chart-bar';
+      const height = 20 + Math.random() * 80;
+      bar.style.height = height + '%';
+
+      // Simulate some threat hours
+      if (Math.random() < 0.12) {
+        bar.className += ' threat';
+      }
+
+      bar.title = `${String(i).padStart(2, '0')}:00`;
+      chart.appendChild(bar);
+    }
+  }
+
+  // Initial load
+  fetchStats();
+  fetchAlerts();
+  renderChart();
+
+  // Auto-refresh
+  setInterval(fetchStats, 10000);
+  setInterval(fetchAlerts, 5000);
+  setInterval(renderChart, 30000);
+</script>
+</body>
+</html>

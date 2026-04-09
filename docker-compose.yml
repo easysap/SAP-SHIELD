@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  sapshield:
+    build: .
+    container_name: sap-shield
+    ports:
+      - "8000:8000"   # API
+      - "3000:8000"   # Dashboard (alias)
+    volumes:
+      - shield-data:/app/data
+      - ./config:/app/config:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; r = httpx.get('http://localhost:8000/api/health'); assert r.status_code == 200"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  shield-data:
+    driver: local
