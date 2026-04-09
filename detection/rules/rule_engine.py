@@ -85,19 +85,14 @@ class RuleEngine:
 
     def _build_context(self, event, extra: dict) -> dict:
     enrichment = event.raw_data.get("enrichment", {})
-
     ctx = {
-        "event_type": event.event_type.value if hasattr(event.event_type, 'value') else str(event.event_type),
+        "event_type": str(event.event_type),
         "user": event.user,
-        "transaction": event.transaction or "",
-        "table_name": event.table_name or "",
         "record_count": event.record_count,
-        "data_sensitivity": event.data_sensitivity,
-        "source_ip": event.source_ip or "",
+        "table_name": event.table_name or "",
         "outside_business_hours": enrichment.get("outside_business_hours", False),
-        "transaction_sensitivity": enrichment.get("transaction_sensitivity", "NORMAL"),
         "time_window_minutes": enrichment.get("time_window_minutes", 0),
-        "unique_transactions_1h": enrichment.get("unique_transactions_1h", 0),
+        "transaction_sensitivity": enrichment.get("transaction_sensitivity", "NORMAL"),
     }
     ctx.update(extra)
     return ctx
