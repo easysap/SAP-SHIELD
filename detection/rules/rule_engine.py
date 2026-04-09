@@ -96,7 +96,7 @@ class RuleEngine:
         "source_ip": event.source_ip or "",
         "outside_business_hours": enrichment.get("outside_business_hours", False),
         "transaction_sensitivity": enrichment.get("transaction_sensitivity", "NORMAL"),
-        "time_window_minutes": enrichment.get("time_window_minutes", 0), 
+        "time_window_minutes": enrichment.get("time_window_minutes", 0),
         "unique_transactions_1h": enrichment.get("unique_transactions_1h", 0),
     }
     ctx.update(extra)
