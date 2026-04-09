@@ -84,27 +84,23 @@ class RuleEngine:
         return matches
 
     def _build_context(self, event, extra: dict) -> dict:
-        """Build a flat context dictionary for rule evaluation."""
-        enrichment = event.raw_data.get("enrichment", {})
+    enrichment = event.raw_data.get("enrichment", {})
 
-        ctx = {
-            "event_type": event.event_type.value if hasattr(event.event_type, 'value') else str(event.event_type),
-            "user": event.user,
-            "transaction": event.transaction or "",
-            "table_name": event.table_name or "",
-            "record_count": event.record_count,
-            "data_sensitivity": event.data_sensitivity,
-            "source_ip": event.source_ip or "",
-            "outside_business_hours": enrichment.get("outside_business_hours", False),
-            "is_weekend": enrichment.get("is_weekend", False),
-            "hour_of_day": enrichment.get("hour_of_day", 0),
-            "transaction_sensitivity": enrichment.get("transaction_sensitivity", "NORMAL"),
-            "table_sensitivity": enrichment.get("table_sensitivity", "NORMAL"),
-            "high_volume": enrichment.get("high_volume", False),
-            "extreme_volume": enrichment.get("extreme_volume", False),
-        }
-        ctx.update(extra)
-        return ctx
+    ctx = {
+        "event_type": event.event_type.value if hasattr(event.event_type, 'value') else str(event.event_type),
+        "user": event.user,
+        "transaction": event.transaction or "",
+        "table_name": event.table_name or "",
+        "record_count": event.record_count,
+        "data_sensitivity": event.data_sensitivity,
+        "source_ip": event.source_ip or "",
+        "outside_business_hours": enrichment.get("outside_business_hours", False),
+        "transaction_sensitivity": enrichment.get("transaction_sensitivity", "NORMAL"),
+        "time_window_minutes": enrichment.get("time_window_minutes", 0), 
+        "unique_transactions_1h": enrichment.get("unique_transactions_1h", 0),
+    }
+    ctx.update(extra)
+    return ctx
 
     def _evaluate_rule(self, rule: dict, ctx: dict) -> Optional[RuleMatch]:
         """Evaluate a single rule against context."""
