@@ -20,8 +20,7 @@ engine = RuleEngine(rules_path=rules_path)
 # 2. Create a "Suspicious" SAP event
 # Scenario: An admin downloading sensitive user data outside business hours
 test_event = MockEvent(
-    # Match the YAML's allowed list: [DATA_EXPORT, TABLE_READ, REPORT_DOWNLOAD]
-    event_type="TABLE_READ", 
+    event_type="TABLE_READ",  # Must match the list in YAML
     user="BASIS_ADMIN",
     transaction="SE16N",
     table_name="USR02",
@@ -32,9 +31,9 @@ test_event = MockEvent(
         "enrichment": {
             "outside_business_hours": True,
             "extreme_volume": True,
-            "table_sensitivity": "CRITICAL",
-            "transaction_sensitivity": "CRITICAL", 
-            "time_window_minutes": 5 
+            "transaction_sensitivity": "CRITICAL",
+            "time_window_minutes": 30,
+            "unique_transactions_1h": 20
         }
     }
 )
