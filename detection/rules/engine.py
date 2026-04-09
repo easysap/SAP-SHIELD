@@ -9,7 +9,7 @@ from connectors.base import SAPEvent
 from detection.models.baseline import BaselineEngine
 from detection.models.anomaly import AnomalyScorer
 from detection.models.sequence import SequenceAnalyzer
-from detection.rules.rule_engine import RuleEngine
+from .rule_engine import RuleEngine
 
 
 class DetectionResult:
