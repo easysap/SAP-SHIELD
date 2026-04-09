@@ -1,0 +1,110 @@
+# SAP Shield Configuration
+# ========================
+
+app:
+  name: SAP Shield
+  version: 0.1.0
+  log_level: INFO
+  host: 0.0.0.0
+  port: 8000
+
+# SAP Connection
+# Set connector to 'simulator' for demo mode (no SAP system required)
+sap:
+  connector: simulator          # Options: rfc, odata, file, simulator
+  poll_interval_seconds: 10     # How often to pull new events
+
+  # RFC Connector (requires SAP NW RFC SDK + PyRFC)
+  # rfc_config:
+  #   ashost: sap-server.company.com
+  #   sysnr: "00"
+  #   client: "100"
+  #   user: SHIELD_SERVICE
+  #   passwd: "${SAP_PASSWORD}"   # Use env var in production
+  #   lang: EN
+
+  # OData Connector
+  # odata_config:
+  #   base_url: https://sap-server.company.com:443/sap/opu/odata/sap
+  #   auth_type: basic            # basic, oauth2
+  #   username: SHIELD_SERVICE
+  #   password: "${SAP_PASSWORD}"
+
+  # File Connector (for batch log ingestion)
+  # file_config:
+  #   watch_directory: ./data/sap_logs
+  #   file_pattern: "*.csv"
+  #   archive_processed: true
+
+# Simulator Settings (used when connector = simulator)
+simulator:
+  num_users: 50
+  events_per_minute: 30
+  threat_injection_rate: 0.02   # 2% of events will be anomalous
+  business_hours:
+    start: "08:00"
+    end: "18:00"
+    timezone: "UTC"
+  scenarios:
+    - mass_data_export
+    - privilege_escalation
+    - off_hours_access
+    - ghost_account
+    - transaction_hopping
+
+# Detection Engine
+detection:
+  sensitivity: medium             # low, medium, high
+  baseline_window_days: 30        # Days of history for behavioral baseline
+  min_baseline_events: 100        # Minimum events before baseline is reliable
+  alert_threshold: 0.75           # Risk score threshold (0.0 - 1.0)
+  max_alerts_per_user_per_day: 10 # Rate limit alerts
+
+  # Model-specific tuning
+  models:
+    isolation_forest:
+      contamination: 0.05
+      n_estimators: 200
+    statistical:
+      std_dev_threshold: 3.0
+    sequence:
+      window_size: 20
+      min_sequence_length: 3
+
+# Storage
+storage:
+  backend: sqlite                 # Options: sqlite, postgresql
+  sqlite_path: ./data/sapshield.db
+
+  # PostgreSQL (for production)
+  # postgresql:
+  #   host: localhost
+  #   port: 5432
+  #   database: sapshield
+  #   user: sapshield
+  #   password: "${DB_PASSWORD}"
+
+  # Data retention
+  retention:
+    events_days: 90
+    alerts_days: 365
+    baselines_days: 180
+
+# Alerting
+alerting:
+  enabled: true
+  channels:
+    console: true
+    # email:
+    #   smtp_host: smtp.company.com
+    #   smtp_port: 587
+    #   from: sapshield@company.com
+    #   to:
+    #     - security-team@company.com
+    # webhook:
+    #   url: https://hooks.slack.com/services/XXX/YYY/ZZZ
+
+# Dashboard
+dashboard:
+  enabled: true
+  port: 3000

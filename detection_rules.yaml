@@ -1,0 +1,112 @@
+# SAP Shield Detection Rules
+# ==========================
+# These rules define specific threat detection scenarios.
+# Thresholds are configurable — tune them for your environment.
+
+rules:
+  - id: MASS_DATA_EXPORT
+    name: Mass Data Export Detection
+    description: Detects when a user downloads or exports abnormally large volumes of data
+    severity: critical
+    enabled: true
+    conditions:
+      - field: event_type
+        operator: in
+        value: [DATA_EXPORT, TABLE_READ, REPORT_DOWNLOAD]
+      - field: record_count
+        operator: greater_than
+        value: 10000
+      - field: time_window_minutes
+        operator: within
+        value: 60
+    scoring:
+      base_score: 0.6
+      multipliers:
+        - condition: "record_count > 50000"
+          multiply: 1.5
+        - condition: "data_sensitivity == 'HIGH'"
+          multiply: 1.3
+        - condition: "outside_business_hours"
+          multiply: 1.2
+
+  - id: PRIVILEGE_ESCALATION
+    name: Privilege Escalation Detection
+    description: Detects unauthorized role or authorization changes
+    severity: high
+    enabled: true
+    conditions:
+      - field: event_type
+        operator: in
+        value: [ROLE_CHANGE, AUTH_CHANGE, USER_MODIFY]
+      - field: transaction
+        operator: in
+        value: [SU01, PFCG, SU10, SU02]
+    scoring:
+      base_score: 0.7
+      multipliers:
+        - condition: "target_user == source_user"
+          multiply: 1.5
+        - condition: "role_contains_sap_all"
+          multiply: 2.0
+
+  - id: OFF_HOURS_ACCESS
+    name: Off-Hours Critical Access
+    description: Detects access to sensitive transactions outside business hours
+    severity: medium
+    enabled: true
+    conditions:
+      - field: outside_business_hours
+        operator: equals
+        value: true
+      - field: transaction_sensitivity
+        operator: in
+        value: [HIGH, CRITICAL]
+    scoring:
+      base_score: 0.4
+      multipliers:
+        - condition: "weekend"
+          multiply: 1.3
+        - condition: "holiday"
+          multiply: 1.4
+        - condition: "first_time_off_hours"
+          multiply: 1.5
+
+  - id: GHOST_ACCOUNT
+    name: Ghost Account Activity
+    description: Detects activity from dormant or service accounts
+    severity: high
+    enabled: true
+    conditions:
+      - field: user_dormant_days
+        operator: greater_than
+        value: 90
+      - field: event_type
+        operator: not_in
+        value: [LOGIN_FAILED]
+    scoring:
+      base_score: 0.8
+      multipliers:
+        - condition: "is_service_account"
+          multiply: 1.2
+        - condition: "interactive_login"
+          multiply: 1.4
+
+  - id: TRANSACTION_HOPPING
+    name: Unusual Transaction Combinations
+    description: Detects users accessing unusual combinations of sensitive transactions
+    severity: medium
+    enabled: true
+    conditions:
+      - field: unique_transactions_1h
+        operator: greater_than
+        value: 15
+      - field: transaction_diversity_score
+        operator: greater_than
+        value: 0.8
+    scoring:
+      base_score: 0.5
+      multipliers:
+        - condition: "crosses_sod_boundary"
+          multiply: 1.6
+        - condition: "new_transactions_ratio > 0.5"
+          multiply: 1.3
