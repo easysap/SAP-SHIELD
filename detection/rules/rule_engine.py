@@ -103,31 +103,37 @@ class RuleEngine:
     return ctx
 
     def _evaluate_rule(self, rule: dict, ctx: dict) -> Optional[RuleMatch]:
-        """Evaluate a single rule against context."""
+        """Evaluate a single rule against context with deep logging."""
         conditions = rule.get("conditions", [])
         matched = []
+        
+        print(f"\n[DEBUG] Evaluating Rule: {rule.get('id')}")
 
         for condition in conditions:
             field = condition.get("field", "")
             op_name = condition.get("operator", "equals")
             expected = condition.get("value")
-
             actual = ctx.get(field)
+
+            print(f"  - Testing '{field}': Actual({type(actual).__name__})='{actual}' {op_name} Expected({type(expected).__name__})='{expected}'")
+
             if actual is None:
-                return None  # Required field missing — rule doesn't apply
+                print(f"    ❌ FAILED: Field '{field}' is missing in context.")
+                return None 
 
             op_func = OPERATORS.get(op_name)
-            if not op_func:
-                logger.warning(f"Unknown operator: {op_name}")
-                return None
-
             try:
                 if op_func(actual, expected):
                     matched.append(f"{field} {op_name} {expected}")
+                    print(f"    ✅ PASSED")
                 else:
-                    return None  # Condition not met — rule doesn't match
-            except (TypeError, ValueError):
+                    print(f"    ❌ FAILED: Logic returned False")
+                    return None
+            except Exception as e:
+                print(f"    ❌ ERROR: {e}")
                 return None
+        
+        # ... (rest of your scoring logic remains the same)
 
         # All conditions matched — calculate score
         scoring = rule.get("scoring", {})
