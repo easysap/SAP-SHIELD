@@ -28,12 +28,11 @@ test_event = MockEvent(
     data_sensitivity="HIGH",
     source_ip="10.0.0.50",
     raw_data={
-        "enrichment": {
-            "outside_business_hours": True,
-            "transaction_sensitivity": "CRITICAL",
-            "time_window_minutes": 30 # Satisfies <= 60
-        }
+    "enrichment": {
+        "time_window_minutes": 30, # Now it's "within 60"
+        "outside_business_hours": True
     }
+}
 )
 # 3. Run the engine
 results = engine.evaluate(test_event)
