@@ -85,14 +85,17 @@ class RuleEngine:
 
     def _build_context(self, event, extra: dict) -> dict:
     enrichment = event.raw_data.get("enrichment", {})
+    
     ctx = {
         "event_type": str(event.event_type),
         "user": event.user,
-        "record_count": event.record_count,
+        "transaction": event.transaction or "",
         "table_name": event.table_name or "",
-        "outside_business_hours": enrichment.get("outside_business_hours", False),
+        "record_count": event.record_count,
+        "data_sensitivity": event.data_sensitivity,
+        "source_ip": event.source_ip or "",
         "time_window_minutes": enrichment.get("time_window_minutes", 0),
-        "transaction_sensitivity": enrichment.get("transaction_sensitivity", "NORMAL"),
+        "outside_business_hours": enrichment.get("outside_business_hours", False),
     }
     ctx.update(extra)
     return ctx
