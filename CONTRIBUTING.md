@@ -60,7 +60,7 @@ pytest tests/ -v
 
 ## Security Considerations
 
-If you discover a security vulnerability, please do NOT open a public issue. Instead, email saharguer99@gmail.com (or the maintainer directly) with details.
+If you discover a security vulnerability, please do NOT open a public issue. Instead, contact the maintainer directly with details.
 
 ## Code of Conduct
 
